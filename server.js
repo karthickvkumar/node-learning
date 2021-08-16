@@ -2,95 +2,100 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const bodyParser = require('body-parser');
-const { runInNewContext } = require('vm');
+const mysql = require('mysql');
+const TableName = "agent_profile";
 
 app.use(bodyParser.json());
 app.use(express.json());
 
-const agentList = [
-  {
-    name : "John Scott",
-    age : 45,
-    location: 'Seatle',
-    id : 1
-  },
-  {
-    name : "Laura",
-    location: 'Calgury',
-    age : 29,
-    id : 2
-  },
-  {
-    name : "Peter",
-    location: 'New York',
-    age : 22,
-    id : 3
-  }
-];
-
-app.get('/api/list/agent', (request, response) => {
-  response.status(200).send(agentList);
+const connection = mysql.createConnection({
+  host : 'localhost',
+  user : 'root',
+  password : '',
+  database : 'node_js_tutorial'
 });
 
+connection.connect((error) => {
+  if(error){
+    console.log("Error in connecting the My SQL Server", error);
+    return;
+  }
+
+  console.log("Successfully connected to the MySql Server")
+});
+
+app.post('/api/create/table', (request, response) => {
+  const query = `CREATE TABLE ${TableName} (Name varchar(255), Location varchar(255), Age int(3), Id int NOT NULL AUTO_INCREMENT, PRIMARY KEY(Id))`;
+
+  connection.query(query, (error, result) => {
+      if(error){
+        response.status(500).send({
+          message : "Problem connecting to the Server",
+          error
+        });
+        return;
+      }
+
+    response.status(200).send({
+      message : "Successfully created a New Table",
+      result
+    })
+  });
+});
+
+app.get('/api/list/agent', (request, response) => {
+
+});
 
 app.post('/api/agent/create', (request, response) => {
-  if(!request.body.name || request.body.name == ''){
-    response.status(400).send("Missing or Invalid Name");
+   const agent_name = request.body.name;
+   if(!agent_name){
+     response.status(400).send({
+       message : "Missing Agent Name"
+     });
+     return;
+   }
+
+   const agent_location = request.body.location;
+   if(!agent_location){
+    response.status(400).send({
+      message : "Missing Agent Location"
+    });
     return;
-  }
+   }
 
-  if(!request.body.location || request.body.location == ''){
-    response.status(400).send("Missing or Invalid Location");
-    return;
-  }
+   const agent_age = request.body.age;
+   if(!agent_age){
+     response.status(400).send({
+       message : "Missing Agent Age"
+     });
+     return;
+   }
 
-  if(!request.body.age || request.body.age == ''){
-    response.status(400).send("Missing or Invalid Age");
-    return;
-  }
-  
-  const newAgent = {
-    name : request.body.name,
-    location : request.body.location,
-    age : request.body.age,
-    id : agentList.length + 1
-  }
+  const query = `INSERT INTO ${TableName} (Name, Location, Age) VALUES ('${agent_name}', '${agent_location}', ${agent_age})`;
 
-  agentList.push(newAgent);
+  connection.query(query, (error, result) => {
+    if(error){
+      response.status(500).send({
+        message : "Error occured while inerting the record to table",
+        error
+      });
+      return;
+    }
 
-  response.status(200).send("New Agent profile has been created")
+    response.status(200).send({
+      message : "Successfully created a new record in the Table",
+      result
+    })
+  })
 });
 
 app.put('/api/agent/edit/:id', (request, response) => {
-  const id = request.params.id;
-  const index = agentList.findIndex((value) => {
-    return value.id == id;
-  });
-
-  if(request.body.name){
-    agentList[index].name = request.body.name;
-  }
-
-  if(request.body.location){
-    agentList[index].location = request.body.location
-  }
-
-  if(request.body.age){
-    agentList[index].age = request.body.age;
-  }
-
-  response.status(200).send("Agent Profile has been updated successfully");
+ 
 });
 
 app.delete('/api/agent/delete/:id', (request, response) => {
-  var id = request.params.id;
-  var index = agentList.findIndex((value) => {
-    return value.id == id;
-  });
-
-  agentList.splice(index, 1);
-
-  response.status(200).send("Agent profile has been deleted successfully");
+  
 })
 
 
