@@ -44,7 +44,19 @@ app.post('/api/create/table', (request, response) => {
 });
 
 app.get('/api/list/agent', (request, response) => {
+  const query = `SELECT * FROM ${TableName}`;
+  
+  connection.query(query, (error, result) => {
+    if(error){
+      response.status(500).send({
+        message : "Error in listing the record from database",
+        error
+      });
+      return;
+    }
 
+    response.status(200).send(result);
+  });
 });
 
 app.post('/api/agent/create', (request, response) => {
@@ -91,11 +103,70 @@ app.post('/api/agent/create', (request, response) => {
 });
 
 app.put('/api/agent/edit/:id', (request, response) => {
- 
+  const Id = request.params.id;
+
+  const agent_name = request.body.name;
+   if(!agent_name){
+     response.status(400).send({
+       message : "Missing Agent Name"
+     });
+     return;
+   }
+
+   const agent_location = request.body.location;
+   if(!agent_location){
+    response.status(400).send({
+      message : "Missing Agent Location"
+    });
+    return;
+   }
+
+   const agent_age = request.body.age;
+   if(!agent_age){
+     response.status(400).send({
+       message : "Missing Agent Age"
+     });
+     return;
+   }
+
+   const query = `UPDATE ${TableName} SET Name='${agent_name}', Location='${agent_location}', Age=${agent_age} WHERE Id=${Id}`;
+
+   connection.query(query, (error, result) => {
+      if(error){
+        response.status(500).send({
+          message : "Error in updatating the values into Database",
+          error
+        });
+        return;
+      }
+
+      response.status(200).send({
+        message : 'Successfully updated the record',
+        result
+      })
+   })
+
 });
 
 app.delete('/api/agent/delete/:id', (request, response) => {
+  const Id = request.params.id;
+
+  const query = `DELETE FROM ${TableName} WHERE Id=${Id}`;
   
+  connection.query(query, (error, result) => {
+    if(error){
+      response.status(500).send({
+        messsage : "Error in deleting a record from database",
+        error
+      });
+      return;
+    }
+
+    response.status(200).send({
+      message : "Successfully deteted the record",
+      result
+    })
+  })
 })
 
 
