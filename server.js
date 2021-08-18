@@ -3,7 +3,10 @@ const app = express();
 const http = require('http').createServer(app);
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
+const bcrypt = require('bcrypt');
+
 const TableName = "agent_profile";
+const LoginTable = "login_info";
 
 app.use(bodyParser.json());
 app.use(express.json());
@@ -167,6 +170,32 @@ app.delete('/api/agent/delete/:id', (request, response) => {
       result
     })
   })
+})
+
+app.post('/api/register', async (request, response) => {
+  const name = request.body.name;
+  const email = request.body.email;
+  const password = request.body.password;
+  const curretDate = new Date();
+
+  let hashPassword = await bcrypt.hash(password, 10);
+
+  const query = `INSERT INTO ${LoginTable} (Name, Email, Password, Created_at) VALUES ('${name}', '${email}', '${hashPassword}', '${curretDate}')`;
+
+  connection.query(query, (error, result) => {
+    if(error){
+      response.status(500).send({
+        message : "Error while registering User account",
+        error
+      })
+    }
+
+    response.status(200).send({
+      message : "Successfully created the user account",
+      result
+    })
+  })
+
 })
 
 
